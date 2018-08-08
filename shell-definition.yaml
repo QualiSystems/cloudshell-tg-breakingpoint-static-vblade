@@ -1,0 +1,69 @@
+tosca_definitions_version: tosca_simple_yaml_1_0
+
+metadata:
+  template_name: Breaking Point Static Virtual Blade Shell
+  template_author: Quali
+  template_version: 0.1.0
+  template_icon: shell-icon.png
+
+description: >
+  TOSCA based deployed app shell
+
+imports:
+  - cloudshell_standard: cloudshell_deployed_app_standard_1_0_3.yaml
+
+node_types:
+
+  vendor.switch.BP vBlade:
+    derived_from: cloudshell.nodes.DeployedApp
+    properties:
+      vBlade vCenter VM:
+        type: string          # optional values: string, integer, float, boolean, cloudshell.datatypes.Password
+        default:
+        description: Virtual Blade vCenter VM to use in the VM creation. Should include the full path and the vm name, for example QualiFolder/VM121
+      vChassis vCenter VM:
+        type: string
+        default:
+        description: Virtual Chassis vCenter VM to use in the VM creation. Should include the full path and the vm name, for example QualiFolder/VM121
+      vCenter Name:
+        type: string
+        default:
+        description: The vCenter resource name in CloudShell
+      GenericVPort.Logical Name:
+        type: string
+        description: The port's logical name in the test configuration. If kept emtpy - allocation will applied in the blue print.
+    capabilities:
+      auto_discovery_capability:
+        type: cloudshell.capabilities.AutoDiscovery
+        properties:        
+          enable_auto_discovery:
+            type: boolean
+            default: true
+          auto_discovery_description:
+            type: string
+            default: Describe the auto discovery
+          inventory_description:
+            type: string
+            default: Describe the resource shell template
+          vBlade vCenter VM:
+            description: Virtual Blade vCenter VM to use in the VM creation. Should include the full path and the vm name, for example QualiFolder/VM121
+            type: string
+          vChassis vCenter VM:
+            description: Virtual Chassis vCenter VM to use in the VM creation. Should include the full path and the vm name, for example QualiFolder/VM121
+            type: string
+          vCenter Name:
+            description: The vCenter resource name in CloudShell
+            type: string
+          User:
+            description: User with administrative privileges to BreakingPoint Chassis
+            type: string
+          Password:
+            description: The password is required to access BreakingPoint Chassis
+            type: cloudshell.datatypes.Password
+    artifacts:
+      icon:
+        file: shell-icon.png
+        type: tosca.artifacts.File
+      driver:
+        file: BreakingPointStaticVirtualBladeShellDriver.zip
+        type: tosca.artifacts.File
