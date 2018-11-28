@@ -52,6 +52,8 @@ Release: BreakingPoint VE Static VBlade 2G Shell 1.0.0
 
 ▪ Breaking Point Controller Shell version 1.2.3 and above
 
+**Note:** If your CloudShell version does not support this shell, you should consider upgrading to a later version of CloudShell or contact customer support.
+
 ## Data Model
 
 The shell's data model includes all shell metadata, families, and attributes.
