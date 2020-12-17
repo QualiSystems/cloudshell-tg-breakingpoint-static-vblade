@@ -7,13 +7,16 @@ from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
 
 from bp_api.bp_api import BP_API
+
+from cloudshell.api.cloudshell_api import CloudShellAPISession
+
 from cloudshell.devices.driver_helper import get_logger_with_thread_id
 from cloudshell.shell.core.resource_driver_interface import ResourceDriverInterface
 from cloudshell.shell.core.driver_context import InitCommandContext, AutoLoadDetails, AutoLoadAttribute, \
     AutoLoadResource
 from cloudshell.shell.core.driver_context import ApiVmDetails, ApiVmCustomParam
 from cloudshell.cp.vcenter.commands.load_vm import VMLoader
-from cloudshell.cp.vcenter.common.cloud_shell.driver_helper import CloudshellDriverHelper
+# from cloudshell.cp.vcenter.common.cloud_shell.driver_helper import CloudshellDriverHelper
 from cloudshell.cp.vcenter.common.model_factory import ResourceModelParser
 from cloudshell.cp.vcenter.common.vcenter.vmomi_service import pyVmomiService
 from cloudshell.cp.vcenter.common.vcenter.task_waiter import SynchronousTaskWaiter
@@ -31,7 +34,7 @@ class BreakingPointVBladeShellDriver(ResourceDriverInterface):
     ID_KEY = "id"
 
     def __init__(self):
-        self.cs_helper = CloudshellDriverHelper()
+        # self.cs_helper = CloudshellDriverHelper()
         self.model_parser = ResourceModelParser()
         self.ip_manager = VMIPManager()
         self.task_waiter = SynchronousTaskWaiter()
@@ -61,12 +64,17 @@ class BreakingPointVBladeShellDriver(ResourceDriverInterface):
         logger = get_logger_with_thread_id(context)
         logger.info("Start Autoload process")
 
-        session = self.cs_helper.get_session(context.connectivity.server_address,
-                                             context.connectivity.admin_auth_token,
-                                             self.DOMAIN)
+        # session = self.cs_helper.get_session(context.connectivity.server_address,
+        #                                      context.connectivity.admin_auth_token,
+        #                                      self.DOMAIN)
+
+        session = CloudShellAPISession(host=context.connectivity.server_address,
+                                       token_id=context.connectivity.admin_auth_token,
+                                       domain=self.DOMAIN)
 
         vcenter_vblade = context.resource.attributes["{}.vBlade vCenter VM".format(self.SHELL_NAME)].replace("\\", "/")
-        vcenter_vchassis = context.resource.attributes["{}.vChassis vCenter VM".format(self.SHELL_NAME)].replace("\\", "/")
+        vcenter_vchassis = context.resource.attributes["{}.vChassis vCenter VM".format(self.SHELL_NAME)].replace("\\",
+                                                                                                                 "/")
         username = context.resource.attributes["{}.User".format(self.SHELL_NAME)]
         password = self._decrypt_password(session,
                                           context.resource.attributes["{}.Password".format(self.SHELL_NAME)])
@@ -105,10 +113,13 @@ class BreakingPointVBladeShellDriver(ResourceDriverInterface):
             logger.info("Loading the IP of the vBlade VM")
             vblade_ip = self._try_get_ip(self.pv_service, si, vblade_uuid, vcenter_resource, logger)
             if vblade_ip:
-                module_id = modules_position[vblade_ip]
-                session.UpdateResourceAddress(context.resource.name, "{blade_ip}\{chassis_ip}\M{module_id}".format(blade_ip=vblade_ip,
-                                                                                                                   chassis_ip=vchassis_ip,
-                                                                                                                   module_id=module_id))
+                module_id = modules_position.get(vblade_ip)
+                if module_id is None:
+                    raise Exception("Provided vBlade IP incorrect or vBlade isn't connect to vChassis")
+                session.UpdateResourceAddress(context.resource.name,
+                                              "{blade_ip}\{chassis_ip}\M{module_id}".format(blade_ip=vblade_ip,
+                                                                                            chassis_ip=vchassis_ip,
+                                                                                            module_id=module_id))
             else:
                 raise Exception("Determination of vBlade IP address failed. Please, verify that VM is up and running")
 
